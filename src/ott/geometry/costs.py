@@ -1026,24 +1026,38 @@ class SoftDTW(CostFn):
     return cls(*children, **aux_data)
 
 
-def x_to_means_and_covs(x: jnp.ndarray,
-                        dimension: int) -> Tuple[jnp.ndarray, jnp.ndarray]:
+def x_to_means_and_covs(
+    x: jnp.ndarray,
+    dimension: int,
+    squeeze: bool = False
+) -> tuple[jnp.ndarray, jnp.ndarray]:
   """Extract means and covariance matrices of Gaussians from raveled vector.
 
   Args:
     x: [num_gaussians, dimension, (1 + dimension)] array of concatenated means
       and covariances (raveled) dimension: the dimension of the Gaussians.
     dimension: Dimensionality of the Gaussians.
+    squeeze: Whether to squeeze the means and covariances.
+
 
   Returns:
     Means and covariances of shape ``[num_gaussian, dimension]``.
   """
+  is_1d = x.ndim == 1
   x = jnp.atleast_2d(x)
-  means = x[:, :dimension]
+  leading_shape = x.shape[:-1]
+  means = x[..., :dimension]
   covariances = jnp.reshape(
-      x[:, dimension:dimension + dimension ** 2], (-1, dimension, dimension)
+      x[..., dimension:dimension + dimension ** 2],
+      leading_shape + (dimension, dimension),
   )
-  return jnp.squeeze(means), jnp.squeeze(covariances)
+  if is_1d:
+    means = jnp.squeeze(means, axis=0)
+    covariances = jnp.squeeze(covariances, axis=0)
+  if squeeze:
+    means = jnp.squeeze(means)
+    covariances = jnp.squeeze(covariances)
+  return means, covariances
 
 
 def mean_and_cov_to_x(

@@ -306,5 +306,6 @@ def _lambertw_jvp(
   z, = primals
   dz, = tangents
   w = lambertw(z, tol=tol, max_iter=max_iter)
-  pz = jnp.where(z == 0.0, 1.0, w / ((1.0 + w) * z))
+  # pz = jnp.where(z == 0.0, 1.0, w / ((1.0 + w) * z))
+  pz = jnp.reciprocal(z + jnp.exp(w))
   return w, pz * dz
